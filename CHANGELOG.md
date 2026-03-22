@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.5.8] - 2026-03-22
 
+### ✨ Added
+- **WebUI**
+  - 增加批量操作实例设置代理或者删除
+
 ### 🐛 Fixed
 - **适配器**
   - 修复豆包适配器无法点击选择模型的问题
