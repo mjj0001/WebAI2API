@@ -28,7 +28,8 @@ const TARGET_URL = 'https://www.doubao.com/chat/';
  * @returns {Promise<{text?: string, reasoning?: string, error?: string}>}
  */
 async function generate(context, prompt, imgPaths, modelId, meta = {}) {
-    const { page } = context;
+    const { page, config } = context;
+    const waitTimeout = config?.backend?.pool?.waitTimeout ?? 120000;
 
     // 是否使用深度思考模式
     const useThinking = modelId === 'seed-thinking' || modelId === 'seed-pro';
@@ -70,7 +71,7 @@ async function generate(context, prompt, imgPaths, modelId, meta = {}) {
 
             try {
                 // 点击上传菜单按钮
-                const uploadMenuBtn = page.locator('main button[aria-haspopup="menu"]:not(:has(div[data-testid="deep-thinking-action-button"]))').first();
+                const uploadMenuBtn = page.locator('button[aria-haspopup="menu"]:not(:has(div[data-testid="deep-thinking-action-button"]))').first();
                 await safeClick(page, uploadMenuBtn, { bias: 'button' });
                 await sleep(300, 500);
 
@@ -97,8 +98,15 @@ async function generate(context, prompt, imgPaths, modelId, meta = {}) {
         const modelMenuName = MODEL_MENU_MAP[modelId] || MODEL_MENU_MAP['seed'];
         logger.debug('适配器', `选择模型: ${modelId} -> ${modelMenuName}`, meta);
 
-        const modelSelectorBtn = page.locator('main button[aria-haspopup="menu"]:has(div[data-testid="deep-thinking-action-button"])');
-        const selectorExists = await modelSelectorBtn.count() > 0;
+        // 给予 3 秒的缓冲时间等待 React 渲染按钮
+        const modelSelectorBtn = page.locator('button[aria-haspopup="menu"]:has(div[data-testid="deep-thinking-action-button"])').first();
+        let selectorExists = false;
+        try {
+            await modelSelectorBtn.waitFor({ state: 'attached', timeout: 3000 });
+            selectorExists = true;
+        } catch (e) {
+            selectorExists = false;
+        }
 
         if (selectorExists) {
             await safeClick(page, modelSelectorBtn, { bias: 'button' });
@@ -122,12 +130,12 @@ async function generate(context, prompt, imgPaths, modelId, meta = {}) {
         let isResolved = false;
 
         const resultPromise = new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
+            const timeoutId = setTimeout(() => {
                 if (!isResolved) {
                     isResolved = true;
-                    reject(new Error('API_TIMEOUT: 响应超时 (120秒)'));
+                    reject(new Error(`API_TIMEOUT: 响应超时 (${Math.round(waitTimeout / 1000)}秒)`));
                 }
-            }, 120000);
+            }, waitTimeout);
 
             // 监听页面响应
             const handleResponse = async (response) => {
@@ -149,7 +157,7 @@ async function generate(context, prompt, imgPaths, modelId, meta = {}) {
 
                         if (!isResolved) {
                             isResolved = true;
-                            clearTimeout(timeout);
+                            clearTimeout(timeoutId);
                             page.off('response', handleResponse);
                             resolve();
                         }
