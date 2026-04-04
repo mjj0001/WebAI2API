@@ -175,8 +175,8 @@ async function generate(context, prompt, imgPaths, modelId, meta = {}) {
                 return { error: errorMsg };
             }
 
-            // 取第一张图片，追加 =s1024-rj 获取高分辨率
-            const imageUrl = imageUrls[0] + '=s1024-rj';
+            // 取第一张图片，追加 =d-I 获取全尺寸原图（而非 =s1024-rj 的缩略图）
+            const imageUrl = imageUrls[0] + '=d-I';
             logger.info('适配器', `找到 ${imageUrls.length} 张图片，开始下载...`, meta);
 
             // 提取图片生成的详细描述（thinking）
