@@ -60,18 +60,26 @@ async function generate(context, prompt, imgPaths, modelId, meta = {}) {
             .first();
         let selectorExists = false;
         try {
-            await modelSelectorBtn.waitFor({ state: 'attached', timeout: 1000 });
+            await modelSelectorBtn.waitFor({ state: 'attached', timeout: 5000 });
             selectorExists = true;
         } catch (e) {
             selectorExists = false;
         }
 
         if (selectorExists) {
-            await safeClick(page, modelSelectorBtn, { bias: 'button' });
-            await sleep(300, 500);
-
             const menuItem = page.getByRole('menuitem', { name: modelMenuName });
-            await menuItem.waitFor({ state: 'visible', timeout: 5000 });
+            // 点击模型选择按钮，最多重试 3 次（菜单偶尔不弹出）
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                await sleep(500, 1000);
+                await safeClick(page, modelSelectorBtn, { bias: 'button' });
+                try {
+                    await menuItem.waitFor({ state: 'visible', timeout: 3000 });
+                    break; // 菜单弹出，退出重试
+                } catch {
+                    logger.warn('适配器', `模型菜单未弹出，重试 ${attempt}/3`, meta);
+                    if (attempt === 3) throw new Error('模型选择菜单未弹出');
+                }
+            }
             await safeClick(page, menuItem, { bias: 'button' });
             await sleep(200, 400);
         }

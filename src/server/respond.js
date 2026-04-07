@@ -114,7 +114,6 @@ export function buildChatCompletion(content, modelName, reasoningContent) {
         role: 'assistant',
         content: content
     };
-
     if (reasoningContent) {
         message.reasoning_content = reasoningContent;
     }
@@ -142,7 +141,6 @@ export function buildChatCompletion(content, modelName, reasoningContent) {
  */
 export function buildChatCompletionChunk(content, modelName, finishReason = 'stop', reasoningContent) {
     const delta = { content };
-
     if (reasoningContent) {
         delta.reasoning_content = reasoningContent;
     }

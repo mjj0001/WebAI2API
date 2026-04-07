@@ -68,10 +68,15 @@ export function normalizePageError(err, meta = {}) {
         logger.error('适配器', err.message, meta);
         return { error: err.message, code: ADAPTER_ERRORS.TIMEOUT_ERROR, retryable: true };
     }
-    // 兼容原生 TimeoutError (其他地方抛出的)
+    // CLICK_TIMEOUT: safeClick 内部超时
+    if (err.message?.includes('CLICK_TIMEOUT')) {
+        logger.error('适配器', `点击操作超时: ${err.message}`, meta);
+        return { error: err.message, code: ADAPTER_ERRORS.TIMEOUT_ERROR, retryable: true };
+    }
+    // 兼容原生 TimeoutError (Playwright 元素操作超时等)
     if (err.name === 'TimeoutError' || err.message?.includes('Timeout')) {
-        logger.error('适配器', '请求超时', meta);
-        return { error: '请求超时, 请检查网络或稍后重试', code: ADAPTER_ERRORS.TIMEOUT_ERROR, retryable: true };
+        logger.error('适配器', `页面操作超时: ${err.message}`, meta);
+        return { error: '页面操作超时, 页面可能未正常加载或元素未找到', code: ADAPTER_ERRORS.TIMEOUT_ERROR, retryable: true };
     }
     // PAGE_ERROR_DETECTED: waitApiResponse 页面 UI 中检测到的错误关键词
     if (err.message?.startsWith('PAGE_ERROR_DETECTED:')) {
