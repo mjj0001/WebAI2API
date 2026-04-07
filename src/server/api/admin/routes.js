@@ -43,8 +43,7 @@ import {
     deleteByDateRange as deleteHistoryByDateRange,
     retryMediaDownload,
     getStats as getHistoryStats,
-    getModelList as getHistoryModelList,
-    getMediaDir
+    getModelList as getHistoryModelList
 } from '../../../utils/history.js';
 import path from 'path';
 import fs from 'fs/promises';
@@ -511,20 +510,17 @@ export function createAdminRouter(context) {
                 return;
             }
 
-            // GET /admin/history/media/:filename - 静态媒体文件服务
+            // GET /admin/history/media/:filepath - 静态媒体文件服务
             if (method === 'GET' && pathname.startsWith('/history/media/')) {
-                const filename = pathname.replace('/history/media/', '');
-                if (!filename || filename.includes('..') || filename.includes('/')) {
+                const filepath = pathname.replace('/history/media/', '');
+                if (!filepath || filepath.includes('..')) {
                     sendApiError(res, { code: ERROR_CODES.INVALID_REQUEST_BODY, message: '无效的文件名' });
                     return;
                 }
 
-                const mediaDir = getMediaDir();
-                const filePath = path.join(mediaDir, filename);
-
                 try {
-                    const data = await fs.readFile(filePath);
-                    const ext = path.extname(filename).toLowerCase();
+                    const data = await fs.readFile(filepath);
+                    const ext = path.extname(filepath).toLowerCase();
                     const mimeTypes = {
                         '.png': 'image/png',
                         '.jpg': 'image/jpeg',
